@@ -1,0 +1,51 @@
+# This section defines the anchor parameters
+anchors:
+  - id: a6501
+    coordinates: [ 0, 300, 230 ] # Anchor 6501 coordinates - in centimemeters
+    alfa: 2.12 # Path-loss coefficent
+    d0: 169.70 # reference distance - in centimemeters
+    rssi_d0: -52.76 #RSSI at reference distance 
+    ref_coordinates: [ 120, 300, 110 ] # Reference coordinate - in centimemeters
+  - id: a6502
+    coordinates: [ 600, 0, 230 ] # Anchor 6502 coordinates - in centimemeters
+    alfa: 2.78 # Path-loss coefficent
+    d0: 169.70 # reference distance - in centimemeters
+    rssi_d0: -49.33 #RSSI at reference distance
+    ref_coordinates: [ 600, 120, 110 ] # Reference coordinate - in centimemeters
+  - id: a6503
+    coordinates: [ 1200, 300, 230 ] # Anchor 6503 coordinates - in centimemeters
+    alfa: 2.75 # Path-loss coefficent
+    d0: 169.70 # reference distance - in centimemeters
+    rssi_d0: -49.82 #RSSI at reference distance
+    ref_coordinates: [ 1080, 300, 110 ] # Reference coordinate - in centimemeters
+  - id: a6504
+    coordinates: [ 600, 600, 230 ] # Anchor 6504 coordinates - in centimemeters
+    alfa: 2.86 # Path-loss coefficent
+    d0: 169.70 # reference distance - in centimemeters
+    rssi_d0: -50.16 #RSSI at reference distance
+    ref_coordinates: [ 600, 480, 110 ] # Reference coordinate - in centimemeters
+
+#This section defines the Kalman Filter parameters
+kalman_filter:
+  delta_T: 0.2 #sampling time
+  A: [[1, 0.2, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0.2], [0, 0, 0, 1]] # State Transition Matrix (if the sampling time changes, modify this matrix)
+  C: [[1, 0, 0, 0], [0, 0, 1, 0]] #Observation Matrix
+  Q: [[8, 0, 0, 0], [0, 8, 0, 0], [0, 0, 8, 0], [0, 0, 0, 8]] # Initial Noise Covariance Matrix of the Process
+  R_MLT: [[250, 0], [0, 250]] # MLT Measurement Noise
+  R_AoA_RSSI: [[250, 0], [0, 250]] # AoA+RSSI Measurement Noise
+  R_AoA_only: [[25, 0], [0, 25]] # AoA-only Measurement Noise
+  P: [[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]] #Initial Error Covariance
+
+
+# This section defines some calibration scenario configurations
+calibration:
+ begin_X: 120 #position that the calibration points starts in X coordinates - in centimemeters
+ end_X: 1080 #position that the calibration points ends in X coordinates - in centimemeters
+ begin_Y: 120 #position that the calibration points starts in Y coordinates - in centimemeters
+ bend_Y: 480 #position that the calibration points ends in Y coordinates - in centimemeters
+ Z_score: 2 # Z-score threshold limit to remove RSSI outliers.
+
+#This section configires some additional resources
+additional:
+ x_grid_limit: [-2.00, 8.00] # X grid climite for plots - in meters
+ y_grid_limit: [-2.00, 14.00] # Y grid climite for plots - in meters

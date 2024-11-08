@@ -70,7 +70,7 @@ def RSSI_model():
             
             pathloss_dict[anchor_id] = n
             
-            print(f'Anchor: {anchor_id} --- PLc: {n}')
+            print(f'Anchor: {anchor_id[1:]} --- PLc: {n}')
             
             
     # Plot graphics: use the config.yaml to determine whether to display no plots, only the first plot, or all RSSI models.
@@ -81,13 +81,34 @@ def RSSI_model():
     fig_width = 8  # You can choose any width
     fig_height = fig_width / aspect_ratio
     
-    for anchor_id in ['a6501', 'a6502', 'a6503', 'a6504']:
-        fig, ax = plt.subplots(figsize=(fig_width, fig_height))
-                     
-        x_plot = beacons_calibration_dict[anchor_id].iloc[::60, 10].values / 100  # Slicing every 60th value and dividing by 100 to transform in meters
-        y_plot = beacons_calibration_dict[anchor_id].iloc[::60, 5].values  # Slicing every 60th value for RSSI
+    #for anchor_id in ['a6501', 'a6502', 'a6503', 'a6504']:
         
-        plt.plot(x_plot, y_plot,'o')
-        plt.show()
-    
-    
+    if config['additional']['plot_all_RSSI'] == False and config['additional']['plot_first_RSSI'] == False:
+        print('RSSI plot not selected in config.yaml')
+        
+    else:
+        if config['additional']['plot_all_RSSI'] == True:
+            print('Plotting RSSI for all anchors')
+            plot_anchors = ['a6501', 'a6502', 'a6503', 'a6504']
+        else:
+            print('Plotting RSSI for Anchor 6501 only')
+            plot_anchors = ['a6501']
+            
+        for anchor_id in plot_anchors:    
+            fig, ax = plt.subplots(figsize=(fig_width, fig_height))
+                        
+            x_plot = beacons_calibration_dict[anchor_id].iloc[::60, 10].values / 100  # Slicing every 60th value and dividing by 100 to transform in meters
+            y_plot = beacons_calibration_dict[anchor_id].iloc[::60, 5].values  # Slicing every 60th value for RSSI
+            plt.plot(x_plot, y_plot,'o')
+            
+            plt.plot(df_mean_dict[anchor_id]["D_real"]/100, df_mean_dict[anchor_id][config['additional']['polarization']],'r*') # distance (meters) x mean RSSI
+            
+            df_mean_dict[anchor_id].sort_values(by=['D_real'], inplace=True)
+            plt.plot(df_mean_dict[anchor_id]["D_real"]/100, df_mean_dict[anchor_id]["RSSImodel"],'k', linewidth=3) # # distance (meters) x RSSI model
+            
+            plt.legend(['RSSI Measurements','Mean RSSI', 'RSSI Model'],loc=1, fontsize=11)
+            plt.xlabel("Distance [m]",fontsize=12)
+            plt.ylabel("RSSI [dBm]", fontsize=12)
+            plt.title(f"RSSI x Distance - Anchor {anchor_id[1:]}", fontsize=14)
+            plt.grid()
+            plt.show()

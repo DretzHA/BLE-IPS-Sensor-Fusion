@@ -52,19 +52,19 @@ file_paths:
 anchors:
   - id: a6501
     coordinates: [ 0, 300, 230 ] # Anchor 6501 coordinates - in centimemeters
-    alfa: 1.329 # Path-loss coefficent
+    alpha: 1.329 # Path-loss coefficent
     ref_coordinates: [ 120, 300, 110 ] # Reference coordinate - in centimemeters
   - id: a6502
     coordinates: [ 600, 0, 230 ] # Anchor 6502 coordinates - in centimemeters
-    alfa: 1.851 # Path-loss coefficent
+    alpha: 1.851 # Path-loss coefficent
     ref_coordinates: [ 600, 120, 110 ] # Reference coordinate - in centimemeters
   - id: a6503
     coordinates: [ 1200, 300, 230 ] # Anchor 6503 coordinates - in centimemeters
-    alfa: 1.419 # Path-loss coefficent
+    alpha: 1.419 # Path-loss coefficent
     ref_coordinates: [ 1080, 300, 110 ] # Reference coordinate - in centimemeters
   - id: a6504
     coordinates: [ 600, 600, 230 ] # Anchor 6504 coordinates - in centimemeters
-    alfa: 2.012 # Path-loss coefficent
+    alpha: 2.012 # Path-loss coefficent
     ref_coordinates: [ 600, 480, 110 ] # Reference coordinate - in centimemeters
 
 #This section defines the Kalman Filter parameters

@@ -3,10 +3,21 @@ import math
 import pandas as pd
 import sympy as sym
 
-# Function to get coordinates and reference coordinates for a given anchor ID
-def get_anchor_coordinates_data(anchor_id, config):
+# Helper function to load datasets for movement scenarios
+def load_data(case, run, config, beacons_column_names, gt_column_names):
+    """Load the beacons and ground truth data for a specific case and run."""
+    beacons_file_path = config['file_paths']['mobility'][f'use_case_{case}'][f'run{run}']['beacons']
+    gt_file_path = config['file_paths']['mobility'][f'use_case_{case}'][f'run{run}']['gt']
+    
+    beacons_data = pd.read_csv(beacons_file_path, header=None, names=beacons_column_names)
+    gt_data = pd.read_csv(gt_file_path, header=None, names=gt_column_names)
+    
+    return beacons_data, gt_data
+
+# Function to get coordinates, PLc and reference coordinates for a given anchor ID
+def get_anchor_data(anchor_id, config):
     anchor = next(anchor for anchor in config['anchors'] if anchor['id'] == anchor_id)
-    return anchor['coordinates'], anchor['ref_coordinates']
+    return anchor['coordinates'], anchor['ref_coordinates'], anchor['alpha']
 
 # Function to calculate the real distance between calibration points and anchor
 def calculate_real_distance_df(df, anchor_id, coordinates, reference_coordinates, dH):
@@ -126,3 +137,99 @@ def rssi_model(dataframe, Plzt, coordinates, n, reference_coordinates, dH):
     # Estimate distance by log-distance model
     dataframe["Dest_RSSI"] = d0 * 10**((rssi_d0 - dataframe[Plzt]) / (10 * n))
     
+# Function to  interpolate the trajectory of a moving object by processing ground truth and beacon data.
+def get_trajectory(beacons_movement, gt_movement, config):
+    
+    # Initialize position and time variables
+    initial_x, initial_y = gt_movement.iloc[0, 2], gt_movement.iloc[0, 3]
+    initial_time = gt_movement.iloc[0, 0]
+    final_time = gt_movement.iloc[-1, 0]
+    gt_movement['Vx'] = 0.0
+    gt_movement['Vy'] = 0.0
+    
+    # Calculate velocities for gt_movement
+    for i in range(1, len(gt_movement)):
+        
+        prev_end_time = gt_movement.iloc[i - 1, 1]
+        time_diff = (gt_movement.iloc[i, 0] - (prev_end_time if not pd.isna(prev_end_time) else gt_movement.iloc[i - 1, 0])) / 1000
+        gt_movement.iloc[i, 4] = (gt_movement.iloc[i, 2] - gt_movement.iloc[i - 1, 2]) / 100 / time_diff  # Vx in m/s
+        gt_movement.iloc[i, 5] = (gt_movement.iloc[i, 3] - gt_movement.iloc[i - 1, 3]) / 100 / time_diff  # Vy in m/s
+        
+    # Filter beacons_movement by initial and final time
+    beacons_movement = beacons_movement[(beacons_movement['TimeStamp'] >= initial_time) & 
+                                        (beacons_movement['TimeStamp'] <= final_time)].copy()
+    
+    # Discretize time for beacons_movement
+    Tdisc = config['kalman_filter']['delta_T']  # Discretization time in seconds
+    beacons_movement['InitialTime'] = ((beacons_movement['TimeStamp'] - initial_time) / 1000 / Tdisc).astype(int)
+
+    # Calculate real position over time
+    Xr, Yr = [], []
+    actual_x, actual_y = initial_x, initial_y
+    old_timer = initial_time
+    
+    for actual_time in beacons_movement['TimeStamp']:
+        for k in range(1, len(gt_movement)):
+            gt_start_time, gt_end_time = gt_movement.iloc[k, 0], gt_movement.iloc[k - 1, 1]
+            if actual_time <= gt_start_time:
+                actual_vx = gt_movement.iloc[k, 4] if pd.isna(gt_end_time) or actual_time > gt_end_time else 0
+                actual_vy = gt_movement.iloc[k, 5] if pd.isna(gt_end_time) or actual_time > gt_end_time else 0
+                break
+
+        # Update position based on velocity and elapsed time
+        time_elapsed = (actual_time - old_timer) / 1000
+        actual_x += actual_vx * time_elapsed * 100  # Convert to cm
+        actual_y += actual_vy * time_elapsed * 100  # Convert to cm
+        old_timer = actual_time
+
+        Xr.append(int(actual_x))
+        Yr.append(int(actual_y))
+
+    beacons_movement['Xcoord'] = Xr
+    beacons_movement['Ycoord'] = Yr
+
+    return beacons_movement, gt_movement
+
+# Function to get the mean measurements for each mobility points
+def mean_mobility(dataframe, config):
+    # Calculate RSSILin for the entire DataFrame
+    dataframe['RSSILin'] = np.power(10, (dataframe['2ndP'] - 30) / 10)
+
+    # Group by 'InitialTime' and calculate mean values for each group
+    grouped = dataframe.groupby('InitialTime').agg(
+        Xreal=('Xcoord', 'mean'),
+        Yreal=('Ycoord', 'mean'),
+        Dreal=('Distance', 'mean'),
+        Azim=('AoA_az', 'mean'),
+        Elev=('AoA_el', 'mean'),
+        MeanRSSI=('RSSILin', 'mean')  # Using linear RSSI mean initially
+    ).reset_index()
+
+    # Convert MeanRSSI back to dBm using log scale and add offset
+    grouped['MeanRSSI'] = 10 * np.log10(grouped['MeanRSSI']) + 30
+
+    # Adjust InitialTime to represent the time in seconds
+    grouped['InitialTime'] = grouped['InitialTime'] * config['kalman_filter']['delta_T']  # Discretization time in seconds
+
+    return grouped[['InitialTime', 'Xreal', 'Yreal', 'Dreal', 'Azim', 'Elev', 'MeanRSSI']]
+
+#Function to corrected the size of the dataframes 
+def df_correct_sizes(df6501, df6502, df6503, df6504):
+    # List of DataFrames
+    dfs = [df6501, df6502, df6503, df6504]
+    
+    # Find the maximum number of rows across DataFrames
+    total_row = max(len(df) for df in dfs)
+    
+    # Ensure each DataFrame has the same number of rows
+    for i, df in enumerate(dfs):
+        if len(df) < total_row:
+            # Calculate the number of rows to add
+            rows_to_add = total_row - len(df)
+            # Concatenate empty rows to match `total_row` length
+            dfs[i] = pd.concat([df, pd.DataFrame(np.nan, index=range(rows_to_add), columns=df.columns)], ignore_index=True)
+        
+        # Interpolate missing data
+        dfs[i].interpolate(method='linear', inplace=True)
+    
+    return dfs[0], dfs[1], dfs[2], dfs[3]

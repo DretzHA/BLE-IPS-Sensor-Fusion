@@ -1,6 +1,5 @@
 import yaml
 import pandas as pd
-import numpy as np
 import dataProcessing as dP
 import matplotlib.pyplot as plt
 
@@ -40,7 +39,7 @@ def RSSI_model():
     # Access data for anchors 6501, 6502, 6503, 6504
     for anchor_id in ['a6501', 'a6502', 'a6503', 'a6504']:
         # Get coordinates and reference coordinates for the current anchor
-        coordinates, reference_coordinates = dP.get_anchor_coordinates_data(anchor_id, config)
+        coordinates, reference_coordinates, not_used = dP.get_anchor_data(anchor_id, config)
 
         # Height difference between anchor and tag
         dH = coordinates[2] - reference_coordinates[2]

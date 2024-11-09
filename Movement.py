@@ -5,6 +5,7 @@ import dataProcessing as dP
 import matplotlib.pyplot as plt
 import dataProcessing as dP
 import findPositions as fP
+from matplotlib.lines import Line2D  # Import Line2D for custom legend
 
 def run(case):
     
@@ -233,7 +234,7 @@ def run(case):
         if config['additional']['plot_first_path'] == False and config['additional']['plot_all_paths'] == False:
             plot_path = False
         else:
-            if config['additional']['plot_all_RSSI'] == True:
+            if config['additional']['plot_all_paths'] == True:
                 plot_path = True
             else:
                 if run == 1:
@@ -280,7 +281,7 @@ def run(case):
                plt.plot([df_posARFL.iloc[i,0]/100,df_posTrigonometry.iloc[i,2]/100], [df_posARFL.iloc[i,1]/100,df_posTrigonometry.iloc[i,3]/100],'y', linewidth=0.2) # lines real to trigonometry+KF
                plt.plot([df_posARFL.iloc[i,0]/100,df_posARFL.iloc[i,2]/100], [df_posARFL.iloc[i,1]/100,df_posARFL.iloc[i,3]/100],'g', linewidth=0.2) # lines real to ARFL
             
-            plt.title('Position Estimation')
+            plt.title(f'Case: {case} - Run: {run} -- Position Estimation')
             plt.legend(['Area','Anchors','Real Trajectory' , 'AoA-only', 'AoA-only+KF', 'AoA+RSSI','AoA+RSSI+KF', 'ARFL'],loc=1, fontsize='small')
             plt.tick_params(axis='x', labelsize=12)
             plt.tick_params(axis='y', labelsize=12)
@@ -292,7 +293,7 @@ def run(case):
     
     # Calculate the overall mean average error
     overall_mean_error_MLT = round(sum(mean_errors_MLT) / (len(mean_errors_MLT)*100), 2) #transform to meters and round
-    print(f"Multilateration Average Error across all runs: {overall_mean_error_MLT}")
+    print(f"\nMultilateration Average Error across all runs: {overall_mean_error_MLT}")
     overall_mean_error_Trigonometry = round(sum(mean_errors_Trigonometry) / (len(mean_errors_Trigonometry)*100), 2) #transform to meters and round
     print(f"AoA+RSSI Average Error across all runs: {overall_mean_error_Trigonometry}")
     overall_mean_error_Triangulation = round(sum(mean_errors_Triangulation) / (len(mean_errors_Triangulation)*100), 2) #transform to meters and round
@@ -304,7 +305,7 @@ def run(case):
     overall_mean_error_Triangulation_KF = round(sum(mean_errors_Triangulation_KF) / (len(mean_errors_Triangulation_KF)*100), 2) #transform to meters and round
     print(f"AoA-only Average Error across all runs: {overall_mean_error_Triangulation_KF}\n")
     overall_mean_error_ARFL = round(sum(mean_errors_ARFL) / (len(mean_errors_ARFL)*100), 2) #transform to meters and round
-    print(f"ARL Average Error across all runs: {overall_mean_error_ARFL}\n")
+    print(f"ARFL Average Error across all runs: {overall_mean_error_ARFL}\n")
     
     
     # Concatenate all DataFrames of errors into a single DataFrame
@@ -318,9 +319,89 @@ def run(case):
     
     
     ##############################################################################
-    '''Start of plots (Paths, Erro Bargraph and CDF)'''
+    '''Start of plots (Erro Bargraph and CDF)'''
     
+     # Define the aspect ratio
+    aspect_ratio = 16 / 9
+    # Set the figure size based on the aspect ratio
+    fig_width = 8  # You can choose any width
+    fig_height = fig_width / aspect_ratio
     
-    
+    if config['additional']['plot_error_bargraph'] == True:
+        fig, ax = plt.subplots(figsize=(fig_width, fig_height))
+        methods = ['MLT', 'MLT+KF', 'AoA+RSSI', 'AoA+RSSI+KF', 'AoA', 'AoA+KF', 'ARFL']
+        results = [overall_mean_error_MLT, overall_mean_error_MLT_KF, overall_mean_error_Trigonometry, overall_mean_error_Trigonometry_KF, overall_mean_error_Triangulation, overall_mean_error_Triangulation_KF, overall_mean_error_ARFL]
+        bar_colors = ['tab:red', 'tab:blue', 'tab:red', 'tab:blue', 'tab:red', 'tab:blue', 'tab:green' ]
+        bar_labels = ['Without Filter', 'With KF', '_Without Filter', '_White KF' ,'_Without Filter', '_KF', 'ARFL']
+        plt.xticks(range(len(methods)),('MLT', 'MLT+KF', 'AoA+RSSI', 'AoA+RSSI+KF', 'AoA', 'AoA+KF', 'ARFL'), rotation=30,fontsize=11)
+        ax.bar(methods, results, label=bar_labels, color=bar_colors)
+        for i in range (len(methods)):
+            plt.text(i, results[i]/2, (results[i]), ha = 'center', va='center')
+
+        # plt.plot(metodos, resultados, 'k', linewidth=2.0)
+        ax.set_ylabel(f'Case: {case} -- Distance Error [m]', fontsize=12)
+        ax.set_title('Distance Error x Method', fontsize=14)
+        ax.legend(title='Method', title_fontsize=12)
+        plt.tick_params(axis='y', labelsize=12)
+        plt.show()
+            
+    if config['additional']['plot_CDF'] == True:
+        # Create a figure and axis
+        fig, ax = plt.subplots(figsize=(fig_width, fig_height))
+        
+        # Config Y-limit and percentiles
+        ax.set_ylim(0, 1)
+        percentile_values = [0.05, 0.25, 0.5, 0.75, 0.95]
+        ax.set_yticks(percentile_values)
+
+        # Function do generate percentiles
+        def plot_cumulative_hist(data, color, label):
+            counts, bin_edges = np.histogram(data/100, bins=100, density=True)
+            cdf = np.cumsum(counts) / np.sum(counts)  # Calculate cumulative distribution
+            plt.step(bin_edges[:-1], cdf, where='post', color=color, label=label, linewidth=2)  # Skip the last bin edge
+
+            # Calculate and annotate percentiles
+            percentiles = [5, 25, 50, 75, 95]
+            for p in percentile_values:
+                # Get the corresponding x value (distance error)
+                value = np.percentile(data, p) / 100  # Divide by 100 to match scaling in plot
+                
+                # Find the corresponding y value on the CDF (percentile in terms of probability)
+                y_value = p / 100.0
+                
+                # Plot the horizontal line from the y-axis (at y_value) to the CDF curve at 'value'
+                plt.hlines(y=y_value, xmin=0, xmax=value, color='grey', linestyle='--', linewidth=1)
+                              
+        # Plot the first cumulative histogram
+        plot_cumulative_hist(df_error_ARFL_all, color='green', label='alg1')
+
+        # Plot the second cumulative histogram
+        plot_cumulative_hist(df_error_Triangulation_KF_all, color='black', label='alg2')
+
+        # Plot the third cumulative histogram
+        plot_cumulative_hist(df_error_Trigonometry_KF_all, color='purple', label='alg3')
+
+        # Add labels and title
+        plt.xlabel('Distance Error [m]', fontsize=14)
+        plt.ylabel('Cumulative Probability', fontsize=14)
+        plt.title(f'Case: {case} -- Cumulative Distribution Error', fontsize=14)
+        plt.xlim(left=0, right=3)  # Ajuste limite do eixo x de 0 a 3
+        plt.ylim(0, 1)  # Limite do eixo y de 0 a 1
+
+        plt.grid(True, axis='y')  # Grade apenas no eixo y
+
+        # Create custom legend lines (Line2D objects)
+        custom_lines = [Line2D([0], [0], color='green', lw=2),
+                        Line2D([0], [0], color='purple', lw=2),
+                        Line2D([0], [0], color='black', lw=2)]
+
+        # Add a legend using the custom lines
+        plt.legend(custom_lines, ['ARFL', 'AoA+KF', 'AoA+RSSI+KF'], handlelength=2, loc=4, fontsize=14)
+        plt.tick_params(axis='y', labelsize=12)
+        plt.tick_params(axis='x', labelsize=12)
+
+        # Show the plot
+        plt.show()
+        print()
     
         

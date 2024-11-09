@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import dataProcessing as dP
+import math
 
 #Function to obtain position by multilateratio
 def multilateration(config, mean_data):
@@ -164,4 +165,65 @@ def trigonometry(mean_data, config, df_posMLT):
     
     return df_trigonometry
 
+def triangulation(mean_data, config):
+    
+    anchors_coordinates = {}
+    for anchor in config['anchors']: # getting the data for each anchors
+        anchor_id = anchor['id']
+        x, y, z = anchor['coordinates']  # get coordinates
+        xr, xy, zr = anchor['ref_coordinates']  # get references coordinates
+        anchors_coordinates[anchor_id] = {
+            'x': x,
+            'y': y,
+            'z': z,
+            'alpha': anchor['alpha'],
+            'ref_coordinates': anchor['ref_coordinates']
+        }   
+    
+    df_triangulation = pd.DataFrame(columns=['Xreal', 'Yreal', 'Xest', 'Yest']) # Create dataframe o save the results
+    
+    df_triangulation['Xreal'] = mean_data['a6501']['Xreal'] #Assigned real positions
+    df_triangulation['Yreal'] = mean_data['a6501']['Yreal']
+    
+    for i in range(len(mean_data['a6501'])): # Loop through measurements
         
+        aoa1 = math.pi - math.radians(mean_data['a6501'].iloc[i,4]) #azimuth 6501
+        aoa2 = math.pi/2 - math.radians(mean_data['a6502'].iloc[i,4]) #azimuth 6502
+        aoa3 = math.pi - math.radians(mean_data['a6503'].iloc[i,4]) #azimuth 6503
+        aoa4 = math.pi/2 - math.radians(mean_data['a6504'].iloc[i,4]) #azimuth 6504
+        
+        '''
+        The article by Ottoy and Kupper was used as a reference for calculating the triangulation, using the least squares estimation.
+        '''
+        h11 = -math.tan(aoa1)
+        h21 = -math.tan(aoa2)
+        h31 = -math.tan(aoa3)
+        h41 = -math.tan(aoa4)
+        h12 = 1
+        h22 = 1
+        h32 = 1
+        h42 = 1
+
+        H = np.array([[h11, h12],
+                    [h21, h22],
+                    [h31, h32],
+                    [h41, h42]])
+
+        c11 = anchors_coordinates['a6501']['y'] - anchors_coordinates['a6501']['x']*math.tan(aoa1)
+        c21 = anchors_coordinates['a6502']['y'] - anchors_coordinates['a6502']['x']*math.tan(aoa2)
+        c31 = anchors_coordinates['a6503']['y'] - anchors_coordinates['a6503']['x']*math.tan(aoa3)
+        c41 = anchors_coordinates['a6504']['y'] - anchors_coordinates['a6504']['x']*math.tan(aoa4)
+
+        c = np.array([[c11],
+                    [c21],
+                    [c31],
+                    [c41]])
+
+        e = np.linalg.inv(H.transpose().dot(H)).dot(H.transpose()).dot(c) #calculo da posição X,Y
+
+        Xest = e[0][0] #isola X
+        Yest = e[1][0] #isola Y
+        df_triangulation.iloc[i,2] = Xest
+        df_triangulation.iloc[i,3] = Yest
+    
+    return df_triangulation

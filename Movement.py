@@ -40,6 +40,8 @@ def run(case):
     mean_errors_MLT = []
     all_errors_Trigonometry = []
     mean_errors_Trigonometry = []
+    all_errors_Triangulation = []
+    mean_errors_Triangulation  = []
     for run in range(1, 5):
         print(f'Executing RUN {run}')
         filtered_data = {}
@@ -102,19 +104,36 @@ def run(case):
         mean_errors_Trigonometry.append(mean_error_posTrigonometry)
         
         
+        '''Get estimate position by AoA-only (Triangulation)'''
+        
+        df_posTriangulation = fP.triangulation(mean_data, config)
+        
+        #Convert to float
+        df_posTriangulation['Xest'] = df_posTriangulation['Xest'].astype(float) 
+        df_posTriangulation['Yest'] = df_posTriangulation['Yest'].astype(float)
+        
+        #Calculate the error
+        mean_error_posTriangulation, df_all_error_posTriangulation= dP.distance_error(df_posTriangulation)
+        
+        # Append the DataFrame of errors to the list - used latter to get the CDF
+        all_errors_Triangulation.append(df_all_error_posTriangulation)
+        
+        # Append the average errors to the list
+        mean_errors_Triangulation.append(mean_error_posTriangulation)
+        
+        
     # Calculate the overall mean average error
     overall_mean_error_MLT = round(sum(mean_errors_MLT) / (len(mean_errors_MLT)*100), 2) #transform to meters and round
     print(f"Multilateration Average Error across all runs: {overall_mean_error_MLT}")
     overall_mean_error_Trigonometry = round(sum(mean_errors_Trigonometry) / (len(mean_errors_Trigonometry)*100), 2) #transform to meters and round
-    print(f"Aoa+RSSI Average Error across all runs: {overall_mean_error_Trigonometry}\n")
-    
+    print(f"AoA+RSSI Average Error across all runs: {overall_mean_error_Trigonometry}")
+    overall_mean_error_Triangulation = round(sum(mean_errors_Triangulation) / (len(mean_errors_Triangulation)*100), 2) #transform to meters and round
+    print(f"AoA-only Average Error across all runs: {overall_mean_error_Triangulation}\n")
     
     # Concatenate all DataFrames of errors into a single DataFrame
     df_error_MLT_all = pd.concat(all_errors_MLT, ignore_index=True)
     df_error_Trigonometry_all = pd.concat(all_errors_Trigonometry, ignore_index=True)
+    df_error_Triangulation_all = pd.concat(all_errors_Triangulation, ignore_index=True)
     
-    
-
-    print()
     
         

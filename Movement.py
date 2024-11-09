@@ -4,6 +4,7 @@ import numpy as np
 import dataProcessing as dP
 import matplotlib.pyplot as plt
 import dataProcessing as dP
+import findPositions as fP
 
 def run(case):
     
@@ -35,8 +36,10 @@ def run(case):
         exit()
 
 
-    
+    all_errors_MLT = []
+    mean_errors_MLT = []
     for run in range(1, 5):
+        print(f'Executing RUN {run}')
         filtered_data = {}
         mean_data = {}
         for anchor_id in ['a6501', 'a6502', 'a6503', 'a6504']:
@@ -59,8 +62,36 @@ def run(case):
             mean_data[f'{anchor_id}']['Dest_RSSI'] = mean_data[f'{anchor_id}'].iloc[0,3] * np.power(10, ((mean_data[f'{anchor_id}'].iloc[0, 6] - mean_data[f'{anchor_id}']["MeanRSSI"]) / (10 * alpha)))
 
 
-        #Verify the lenght of dataframes and correct if they are different (with the original delta_T this isn't a problem)
+        #Verify the lenght of dataframes and correct if they are different
         mean_data[f'a6501'], mean_data[f'a6502'], mean_data[f'a6503'], mean_data[f'a6504'] = dP.df_correct_sizes(mean_data[f'a6501'], mean_data[f'a6502'], mean_data[f'a6503'], mean_data[f'a6504'])
       
-      
         '''Here starts the algorithms to estimate the position'''
+        
+        '''Get estimate position by Multilateration'''
+        
+        #Calculate positioning with Multilateration Funcion
+        df_posMLT = fP.multilateration(config, mean_data)
+        
+        #Convert to float
+        df_posMLT['Xest'] = df_posMLT['Xest'].astype(float) 
+        df_posMLT['Yest'] = df_posMLT['Yest'].astype(float)
+        
+        #Calculate the error
+        mean_error_posMLT, df_all_error_posMLT= dP.distance_error(df_posMLT)
+        
+        # Append the DataFrame of errors to the list - used latter to get the CDF
+        all_errors_MLT.append(df_all_error_posMLT)
+        
+        # Append the average errors to the list
+        mean_errors_MLT.append(mean_error_posMLT)
+        
+        
+        
+    # Calculate the overall mean average error
+    overall_mean_error_MLT = round(sum(mean_errors_MLT) / (len(mean_errors_MLT)*100), 2) #transform to meters and round
+    print(f"Multilateration Average Error across all runs: {overall_mean_error_MLT}\n")
+
+    # Concatenate all DataFrames of errors into a single DataFrame
+    df_error_MLT_all = pd.concat(all_errors_MLT, ignore_index=True)
+    
+        

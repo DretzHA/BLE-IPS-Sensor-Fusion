@@ -274,3 +274,9 @@ def distance_error(dataframe):
     mean_error = errors.mean()
 
     return mean_error, df_error
+
+# Helper function to create the measurement matrix
+def create_measurement_matrix(position_data, x_key='Xest', y_key='Yest'):
+    x_values = position_data[x_key]
+    y_values = position_data[y_key]
+    return np.array([x_values, y_values]).transpose()

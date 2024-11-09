@@ -27,10 +27,16 @@ def run(case):
         #get the initial movement positioning
         if case == 1:
             initial_position = config['kalman_filter']['case1_initial_pos']
+            plot_start_label = [1.90,5.00]
+            plot_stop_label = [9.12,0.90]
         elif case == 2:
             initial_position = config['kalman_filter']['case2_initial_pos']
+            plot_start_label = [9.10,0.80]
+            plot_stop_label = [1.90,0.80]
         else:
             initial_position = config['kalman_filter']['case3_initial_pos']
+            plot_start_label = [1.90,5.00]
+            plot_stop_label = [9.12,0.90]
         
         for run in range(1, 5):
             beacons_data, gt_data = dP.load_data(case, run, config, beacons_column_names, gt_column_names) #load dataset
@@ -220,6 +226,70 @@ def run(case):
         # Append the average errors to the list
         mean_errors_ARFL.append(mean_error_posARFL)
         
+        
+        #######################################################################################################
+        '''Plot real and estimate positions'''
+        # Estimate path plot - Only plot if True in config.yaml
+        if config['additional']['plot_first_path'] == False and config['additional']['plot_all_paths'] == False:
+            plot_path = False
+        else:
+            if config['additional']['plot_all_RSSI'] == True:
+                plot_path = True
+            else:
+                if run == 1:
+                    plot_path = True
+                else:
+                    plot_path = False
+        
+        if plot_path:
+            print(f'Plotting path for run {run}')
+            plt.figure()
+            plt.ylim(-2.00, 8.00)
+            plt.xlim(-2.00,14.00)
+            plt.plot([0,12.00,12.00,0,0],[0,0,6.00,6.00,0],'k')
+            # Show the major grid and style it slightly.
+            plt.grid(which='major', color='#DDDDDD', linewidth=1)
+            # Show the minor grid as well. Style it in very light gray as a thin,
+            # dotted line.
+            plt.grid(which='minor', color='#EEEEEE', linestyle=':', linewidth=0.8)
+            # Make the minor ticks and gridlines show.
+            plt.minorticks_on()
+            #plot anchors
+            plt.plot([0,6.00,12.00,6.00],[3.00,0,3.00,6.00],'ro', markersize=8)
+            plt.text(-1.30,2.85,'6501')
+            plt.text(5.50,-0.50,'6502')
+            plt.text(12.25,2.85,'6503')
+            plt.text(5.50,6.20,'6504')
+            plt.text(plot_start_label[0],plot_start_label[1],'Start')
+            plt.text(plot_stop_label[0],plot_stop_label[1],'Stop')
+            plt.xlabel('x [m]', loc='right', fontsize = 12)
+            plt.ylabel('y [m]', loc='top', fontsize = 12)
+            
+            for i in range (0,len(df_posARFL),3):
+               plt.plot(df_posARFL.iloc[i,0]/100,df_posARFL.iloc[i,1]/100, 'b*') # real trajectory
+               plt.plot(df_posTriangulation.iloc[i,2]/100,df_posTriangulation.iloc[i,3]/100, 'c.') #position by triangulation
+               plt.plot(df_posTriangulation_KF.iloc[i,2]/100,df_posTriangulation_KF.iloc[i,3]/100, 'm.') #position by triangulation+KF
+               plt.plot(df_posTrigonometry.iloc[i,2]/100,df_posTrigonometry.iloc[i,3]/100, 'y.') #position by trigonometry
+               plt.plot(df_posTrigonometry_KF.iloc[i,2]/100,df_posTrigonometry_KF.iloc[i,3]/100, 'k.') #position by trigonometry+KF
+               plt.plot(df_posARFL.iloc[i,2]/100,df_posARFL.iloc[i,3]/100, 'g.') #position by ARFL
+               
+               # distance errors lines
+               plt.plot([df_posARFL.iloc[i,0]/100,df_posTriangulation_KF.iloc[i,2]/100], [df_posARFL.iloc[i,1]/100,df_posTriangulation_KF.iloc[i,3]/100],'m', linewidth=0.2) # lines real to triangulation+KF
+               plt.plot([df_posARFL.iloc[i,0]/100,df_posTriangulation.iloc[i,2]/100], [df_posARFL.iloc[i,1]/100,df_posTriangulation.iloc[i,3]/100],'c', linewidth=0.2) # lines real to triangulation
+               plt.plot([df_posARFL.iloc[i,0]/100,df_posTrigonometry_KF.iloc[i,2]/100], [df_posARFL.iloc[i,1]/100,df_posTrigonometry_KF.iloc[i,3]/100],'k', linewidth=0.2) # lines real to trigonometry
+               plt.plot([df_posARFL.iloc[i,0]/100,df_posTrigonometry.iloc[i,2]/100], [df_posARFL.iloc[i,1]/100,df_posTrigonometry.iloc[i,3]/100],'y', linewidth=0.2) # lines real to trigonometry+KF
+               plt.plot([df_posARFL.iloc[i,0]/100,df_posARFL.iloc[i,2]/100], [df_posARFL.iloc[i,1]/100,df_posARFL.iloc[i,3]/100],'g', linewidth=0.2) # lines real to ARFL
+            
+            plt.title('Position Estimation')
+            plt.legend(['Area','Anchors','Real Trajectory' , 'AoA-only', 'AoA-only+KF', 'AoA+RSSI','AoA+RSSI+KF', 'ARFL'],loc=1, fontsize='small')
+            plt.tick_params(axis='x', labelsize=12)
+            plt.tick_params(axis='y', labelsize=12)
+            #plt.legend(['Area','Âncoras','Trajetória Real'],loc=1, fontsize='small')
+            plt.show(block=True)
+            
+        
+    ###############################################################################################################################
+    
     # Calculate the overall mean average error
     overall_mean_error_MLT = round(sum(mean_errors_MLT) / (len(mean_errors_MLT)*100), 2) #transform to meters and round
     print(f"Multilateration Average Error across all runs: {overall_mean_error_MLT}")
@@ -234,7 +304,7 @@ def run(case):
     overall_mean_error_Triangulation_KF = round(sum(mean_errors_Triangulation_KF) / (len(mean_errors_Triangulation_KF)*100), 2) #transform to meters and round
     print(f"AoA-only Average Error across all runs: {overall_mean_error_Triangulation_KF}\n")
     overall_mean_error_ARFL = round(sum(mean_errors_ARFL) / (len(mean_errors_ARFL)*100), 2) #transform to meters and round
-    print(f"AoA-only Average Error across all runs: {overall_mean_error_ARFL}\n")
+    print(f"ARL Average Error across all runs: {overall_mean_error_ARFL}\n")
     
     
     # Concatenate all DataFrames of errors into a single DataFrame
@@ -245,6 +315,12 @@ def run(case):
     df_error_Trigonometry_KF_all = pd.concat(all_errors_Trigonometry_KF, ignore_index=True)
     df_error_Triangulation_KF_all = pd.concat(all_errors_Triangulation_KF, ignore_index=True)
     df_error_ARFL_all = pd.concat(all_errors_ARFL, ignore_index=True)
+    
+    
+    ##############################################################################
+    '''Start of plots (Paths, Erro Bargraph and CDF)'''
+    
+    
     
     
         

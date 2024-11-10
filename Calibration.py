@@ -97,7 +97,7 @@ def RSSI_model():
             fig, ax = plt.subplots(figsize=(fig_width, fig_height))
                         
             x_plot = beacons_calibration_dict[anchor_id].iloc[::60, 10].values / 100  # Slicing every 60th value and dividing by 100 to transform in meters
-            y_plot = beacons_calibration_dict[anchor_id].iloc[::60, 5].values  # Slicing every 60th value for RSSI 2ndP
+            y_plot = beacons_calibration_dict[anchor_id].loc[::60, config['additional']['polarization']].values  # Slicing every 60th value for RSSI 2ndP
             plt.plot(x_plot, y_plot,'o')
             
             plt.plot(df_mean_dict[anchor_id]["D_real"]/100, df_mean_dict[anchor_id][config['additional']['polarization']],'r*') # distance (meters) x mean RSSI

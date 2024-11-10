@@ -100,5 +100,5 @@ additional:
   plot_all_RSSI: False # Change this value if you want to plot the RSSI curve in the Calibration code for the all Anchors.
   plot_error_bargraph: True # Change this value if you want to plot the bargraph with the average distance errors.
   plot_CDF: True # Change this value if you want to plot the CDF for the average distance error.
-  polarization: 2ndP # The polarization used
+  polarization: 2ndP # The polarization used - If you want to see the RSSI behaviour in other polatizatoin, can change to '1stP'
  

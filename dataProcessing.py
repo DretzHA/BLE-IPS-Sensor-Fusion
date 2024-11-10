@@ -264,6 +264,7 @@ def adjust_separate_circle_radii(d1, d2, d12):
 
     return d1, d2
 
+# Function to calculate the error
 def distance_error(dataframe):
     
     # Calculate Euclidean distance error for each row (vectorized operation)

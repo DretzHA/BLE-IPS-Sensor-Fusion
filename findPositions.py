@@ -3,7 +3,7 @@ import pandas as pd
 import dataProcessing as dP
 import math
 
-#Function to obtain position by multilateratio
+#Function to obtain position by multilateration
 def multilateration(config, mean_data):
     
     anchors_coordinates = {}
@@ -96,7 +96,7 @@ def multilateration(config, mean_data):
 
     return df_MLT
 
-# Funcion to obtain position by AoA+RSSI
+# Function to obtain position by AoA+RSSI
 def trigonometry(mean_data, config, df_posMLT):
     
     anchors_coordinates = {}
@@ -165,6 +165,7 @@ def trigonometry(mean_data, config, df_posMLT):
     
     return df_trigonometry
 
+# Function to obtain position by AoA-only
 def triangulation(mean_data, config):
     
     anchors_coordinates = {}
@@ -228,7 +229,7 @@ def triangulation(mean_data, config):
     
     return df_triangulation
 
-
+# Kalman Filter
 def kalman_filter(zk, config, initial_position, R):
     
     #Initialize state vector with initial position
@@ -260,6 +261,11 @@ def kalman_filter(zk, config, initial_position, R):
     
     return xk
 
+"""
+Proposed Fusion - ARFL
+Note that the measurements vector already possesses the positions 
+for all time steps obtained by the AoA+RSSI and AoA-only methods.
+"""
 def ARFL_fusion(zk_1, zk_2, R_1, R_2, initial_position, config):
     #1 - Trigonometry (AoA+RSSI)
     #2 - Triangulation (AoA-only)

@@ -69,7 +69,7 @@ def RSSI_model():
             
             pathloss_dict[anchor_id] = n
             
-            print(f'Anchor: {anchor_id[1:]} --- PLc: {n}')
+            print(f'Anchor: {anchor_id[1:]} --- PLc: {round(n,3)}')
             
             
     # Plot graphics: use the config.yaml to determine whether to display no plots, only the first plot, or all RSSI models.

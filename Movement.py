@@ -339,8 +339,8 @@ def run(case):
             plt.text(i, results[i]/2, (results[i]), ha = 'center', va='center')
 
         # plt.plot(metodos, resultados, 'k', linewidth=2.0)
-        ax.set_ylabel(f'Case: {case} -- Distance Error [m]', fontsize=12)
-        ax.set_title('Distance Error x Method', fontsize=14)
+        ax.set_ylabel('Distance Error [m]', fontsize=12)
+        ax.set_title(f'Case: {case} -- Distance Error x Method', fontsize=14)
         ax.legend(title='Method', title_fontsize=12)
         plt.tick_params(axis='y', labelsize=12)
         plt.show()
@@ -376,10 +376,10 @@ def run(case):
         plot_cumulative_hist(df_error_ARFL_all, color='green', label='alg1')
 
         # Plot the second cumulative histogram
-        plot_cumulative_hist(df_error_Triangulation_KF_all, color='black', label='alg2')
+        plot_cumulative_hist(df_error_Triangulation_KF_all, color='purple', label='alg2')
 
         # Plot the third cumulative histogram
-        plot_cumulative_hist(df_error_Trigonometry_KF_all, color='purple', label='alg3')
+        plot_cumulative_hist(df_error_Trigonometry_KF_all, color='black', label='alg3')
 
         # Add labels and title
         plt.xlabel('Distance Error [m]', fontsize=14)

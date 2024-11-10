@@ -303,7 +303,7 @@ def run(case):
     overall_mean_error_Trigonometry_KF = round(sum(mean_errors_Trigonometry_KF) / (len(mean_errors_Trigonometry_KF)*100), 2) #transform to meters and round
     print(f"AoA+RSSI+KF Average Error across all runs: {overall_mean_error_Trigonometry_KF}")
     overall_mean_error_Triangulation_KF = round(sum(mean_errors_Triangulation_KF) / (len(mean_errors_Triangulation_KF)*100), 2) #transform to meters and round
-    print(f"AoA-only Average Error across all runs: {overall_mean_error_Triangulation_KF}\n")
+    print(f"AoA-only+KF Average Error across all runs: {overall_mean_error_Triangulation_KF}\n")
     overall_mean_error_ARFL = round(sum(mean_errors_ARFL) / (len(mean_errors_ARFL)*100), 2) #transform to meters and round
     print(f"ARFL Average Error across all runs: {overall_mean_error_ARFL}\n")
     
@@ -402,6 +402,6 @@ def run(case):
 
         # Show the plot
         plt.show()
-        print()
+
     
         

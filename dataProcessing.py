@@ -213,7 +213,7 @@ def mean_mobility(dataframe, config):
 
     return grouped[['InitialTime', 'Xreal', 'Yreal', 'Dreal', 'Azim', 'Elev', 'MeanRSSI']]
 
-#Function to corrected the size of the dataframes 
+#Function to correct the size of the dataframes 
 def df_correct_sizes(df6501, df6502, df6503, df6504):
     # List of DataFrames
     dfs = [df6501, df6502, df6503, df6504]
@@ -234,6 +234,7 @@ def df_correct_sizes(df6501, df6502, df6503, df6504):
     
     return dfs[0], dfs[1], dfs[2], dfs[3]
 
+# Function to correct the circles radius
 def adjust_circle_eccentric(radius1, radius2, distance_between_anchors):
     
     if radius1>radius2: 
@@ -252,6 +253,7 @@ def adjust_circle_eccentric(radius1, radius2, distance_between_anchors):
 
     return radius1, radius2
 
+# Function to correct the circles radius
 def adjust_separate_circle_radii(d1, d2, d12):
     
     while int(d12)>int((d1+d2)): # While do not intersect

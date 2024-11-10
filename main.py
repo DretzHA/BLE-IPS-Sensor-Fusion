@@ -13,6 +13,6 @@ The value of Path-loss coefficent has to be manually assigned in confing.yaml
 # Calibration.RSSI_model() 
 
 
-# Movement.run(case=1)
+Movement.run(case=1)
 # Movement.run(case=2)
 Movement.run(case=3)

@@ -336,7 +336,7 @@ def run(case):
         plt.xticks(range(len(methods)),('MLT', 'MLT+KF', 'AoA+RSSI', 'AoA+RSSI+KF', 'AoA', 'AoA+KF', 'ARFL'), rotation=30,fontsize=11)
         ax.bar(methods, results, label=bar_labels, color=bar_colors)
         for i in range (len(methods)):
-            plt.text(i, results[i]/2, (results[i]), ha = 'center', va='center')
+            plt.text(i, results[i]/2, f"{results[i]:.2f}", ha = 'center', va='center')
 
         # plt.plot(metodos, resultados, 'k', linewidth=2.0)
         ax.set_ylabel('Distance Error [m]', fontsize=12)

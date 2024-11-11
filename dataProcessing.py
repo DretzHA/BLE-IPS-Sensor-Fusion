@@ -90,7 +90,7 @@ def pathloss_calculation(dataframe, Plzt, reference_coordinates, coordinates, dH
     
     # Use vectorized operations to calculate RSSI model
     # Define the path loss model for each point based on the distance
-    model_rssi = rssi_d0 - 10 * sym.Symbol('n') * np.log10(distances / d0)
+    #model_rssi = rssi_d0 - 10 * sym.Symbol('n') * np.log10(distances / d0)
     
     # Compute the path loss exponent (n) using least squares
     # Minimize the sum of squared errors between the model and actual RSSI values

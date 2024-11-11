@@ -163,7 +163,7 @@ def get_trajectory(beacons_movement, gt_movement, config):
     Tdisc = config['kalman_filter']['delta_T']  # Discretization time in seconds
     beacons_movement['InitialTime'] = ((beacons_movement['TimeStamp'] - initial_time) / 1000 / Tdisc).astype(int)
 
-    # Calculate real position over time
+    # Interpolate position over time
     Xr, Yr = [], []
     actual_x, actual_y = initial_x, initial_y
     old_timer = initial_time
@@ -239,15 +239,15 @@ def adjust_circle_eccentric(radius1, radius2, distance_between_anchors):
     
     if radius1>radius2: 
         while int(radius1)>int((distance_between_anchors+radius2)): # While do not intersect
-            radius1 = radius1-(radius1/(radius2+radius1))*(radius1-distance_between_anchors-radius2) # reduce radius 1
-            radius2 = radius2+(radius2/(radius2+radius1))*(radius1-distance_between_anchors-radius2) # grow radius 2
+            radius1 = radius1-(radius1/(radius2+radius1))*(radius1-distance_between_anchors-radius2) # Reduce radius 1
+            radius2 = radius2+(radius2/(radius2+radius1))*(radius1-distance_between_anchors-radius2) # Increase radius 2
             radius1 = radius1*0.9 #Scalling Factor
             radius2 = radius2*1.1 #Scalling Factor
             
     elif radius1<radius2:
         while int(radius2)>int((distance_between_anchors+radius1)): # While do not intersect
-            radius2 = radius2-(radius2/(radius2+radius1))*(radius2-distance_between_anchors-radius1) # reduce radius 2
-            radius1 = radius1+(radius1/(radius2+radius1))*(radius2-distance_between_anchors-radius1) # grow radius 1
+            radius2 = radius2-(radius2/(radius2+radius1))*(radius2-distance_between_anchors-radius1) # Reduce radius 2
+            radius1 = radius1+(radius1/(radius2+radius1))*(radius2-distance_between_anchors-radius1) # Increase radius 1
             radius1 = radius1*1.1 #Scalling Factor
             radius2 = radius2*0.9 #Scalling Factor
 
@@ -257,8 +257,8 @@ def adjust_circle_eccentric(radius1, radius2, distance_between_anchors):
 def adjust_separate_circle_radii(d1, d2, d12):
     
     while int(d12)>int((d1+d2)): # While do not intersect
-        d1 = (d1/(d1+d2))*d12  # grow radius 1
-        d2 = (d2/(d1+d2))*d12 # grow radius 2
+        d1 = (d1/(d1+d2))*d12  # Increase radius 1
+        d2 = (d2/(d1+d2))*d12 # Increase radius 2
         d1 = d1*1.1  #Scalling Factor
         d2 = d2*1.1 #Scalling Factor
 

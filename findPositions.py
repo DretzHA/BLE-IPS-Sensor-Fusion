@@ -116,10 +116,10 @@ def trigonometry(mean_data, config, df_posMLT):
     
     posTrigonometry = {anchor_id: {'x': [], 'y': []} for anchor_id in ['a6501', 'a6502', 'a6503', 'a6504']} #dict to save the result of each anchor
     for anchor_id in ['a6501', 'a6502', 'a6503', 'a6504']:
-        #Calulate the distance from anchors to the position obtained by multilateration
+        # Calculate the distance from anchors to the position obtained by multilateration
         mean_data[f'{anchor_id}']['Dest_MLT'] = np.sqrt((df_posMLT["Xest"] - anchors_coordinates[f'{anchor_id}']['x'])**2 + (df_posMLT["Yest"] - anchors_coordinates[f'{anchor_id}']['y'])**2 + (anchors_coordinates[f'{anchor_id}']['ref_coordinates'][2] - anchors_coordinates[f'{anchor_id}']['z'])**2)
 
-        # Given the orientation of each anchor, each one has a different equation to calculate, as they need to be calculated considering the same reference axis.
+        # iven the orientation of each anchor, each calculation requires a different equation, as each must be determined with respect to a common reference axis.
         if anchor_id == 'a6501':
             Xest = abs(-anchors_coordinates[f'{anchor_id}']['x']+mean_data[f'{anchor_id}']['Dest_MLT']*np.sin((np.deg2rad(90-mean_data[f'{anchor_id}']['Azim']))))
             Yest = abs(anchors_coordinates[f'{anchor_id}']['y']-mean_data[f'{anchor_id}']['Dest_MLT']*np.cos((np.deg2rad(90-mean_data[f'{anchor_id}']['Azim']))))
@@ -137,12 +137,12 @@ def trigonometry(mean_data, config, df_posMLT):
         posTrigonometry[anchor_id]['x'].append(Xest)
         posTrigonometry[anchor_id]['y'].append(Yest)
             
-    # Now, calculate the mean of Xest and Yest for all anchors at each row
+
     mean_pos = {'Xest_mean': [], 'Yest_mean': []}   
     # Loop through the rows and calculate the mean Xest and Yest across all anchors
     for i in range(len(df_posMLT)):
         
-        # Get the Xest and Yest values for each anchor at the current row
+        # Get the Xest and Yest values for each anchor at the current time step
         x_values = [posTrigonometry[anchor_id]['x'][0][i] for anchor_id in posTrigonometry]
         y_values = [posTrigonometry[anchor_id]['y'][0][i] for anchor_id in posTrigonometry]
 
@@ -157,7 +157,7 @@ def trigonometry(mean_data, config, df_posMLT):
     # Convert mean_pos dictionary to a DataFrame
     df_mean_pos = pd.DataFrame(mean_pos)
     
-    #attribute results in df_trigonometry
+    # Assign results to df_trigonometry
     df_trigonometry['Xest'] = df_mean_pos['Xest_mean']
     df_trigonometry['Yest'] = df_mean_pos['Yest_mean']
     df_trigonometry['Xreal'] = df_posMLT['Xreal']
@@ -183,7 +183,7 @@ def triangulation(mean_data, config):
     
     df_triangulation = pd.DataFrame(columns=['Xreal', 'Yreal', 'Xest', 'Yest']) # Create dataframe o save the results
     
-    df_triangulation['Xreal'] = mean_data['a6501']['Xreal'] #Assigned real positions
+    df_triangulation['Xreal'] = mean_data['a6501']['Xreal'] # Assign real positions
     df_triangulation['Yreal'] = mean_data['a6501']['Yreal']
     
     for i in range(len(mean_data['a6501'])): # Loop through measurements
@@ -220,10 +220,10 @@ def triangulation(mean_data, config):
                     [c31],
                     [c41]])
 
-        e = np.linalg.inv(H.transpose().dot(H)).dot(H.transpose()).dot(c) #calculo da posição X,Y
+        e = np.linalg.inv(H.transpose().dot(H)).dot(H.transpose()).dot(c) #LS
 
-        Xest = e[0][0] #isola X
-        Yest = e[1][0] #isola Y
+        Xest = e[0][0] #Estimate in X-axis
+        Yest = e[1][0] #Estimate in Y-axis
         df_triangulation.iloc[i,2] = Xest
         df_triangulation.iloc[i,3] = Yest
     

@@ -49,6 +49,7 @@ file_paths:
 
 
 # This section defines the parameters for each anchor
+# Do not change the anchors ID names
 anchors:
   - id: a6501
     coordinates: [ 0, 300, 230 ] # Anchor 6501 coordinates - in centimeters

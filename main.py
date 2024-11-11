@@ -1,5 +1,3 @@
-import yaml
-import numpy as np
 import Calibration
 import Movement
 
@@ -19,7 +17,7 @@ Calibration.RSSI_model()
 '''
 Run movements to plot and view the results for the estimated position provided by the IPS methods.
 
-Plot settings: Use the config.yaml file to determine whether to display plots for the predicted path, average error, and CDF.
+Plot settings: Use the config.yaml file to determine whether to display plots for the predicted path, average error, and Cumulative Distribution Function.
 '''
 
 Movement.run(case=1)

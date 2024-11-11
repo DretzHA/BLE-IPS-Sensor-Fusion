@@ -5,7 +5,7 @@ import dataProcessing as dP
 import matplotlib.pyplot as plt
 import dataProcessing as dP
 import findPositions as fP
-from matplotlib.lines import Line2D  # Import Line2D for custom legend
+from matplotlib.lines import Line2D 
 
 def run(case):
     
@@ -13,19 +13,19 @@ def run(case):
     with open("config.yaml", "r") as file:
         config = yaml.safe_load(file)
         
-    # Read dataset and transform to Pandas Dataframe
-    beacons_column_names = ["TimeStamp", "TagID", "1stP","AoA_az", "AoA_el", "2ndP", "Channel", "AnchorID"] # Columns ID for Beacons Dataset
-    gt_column_names = ["StartTime", "EndTime", "Xcoord","Ycoord"] # Columns ID for Ground Truth Dataset
+    # Read dataset and transform to a Pandas DataFrame
+    beacons_column_names = ["TimeStamp", "TagID", "1stP","AoA_az", "AoA_el", "2ndP", "Channel", "AnchorID"]  # Column IDs for Beacons Dataset
+    gt_column_names = ["StartTime", "EndTime", "Xcoord","Ycoord"] # Column IDs for Ground Truth Dataset
     
-    # Check case validity
+    # Check if the case is valid
     if case in [1, 2, 3]:
-        print(f"Case {case}")
+        print(f"\nCASE {case}")
 
         # Load data for runs 1 to 4 and store in dictionaries
         beacons_data_runs = {}
         gt_data_runs = {}
         
-        #get the initial movement positioning
+        # Get the initial movement positioning and specify where to plot start/stop labels
         if case == 1:
             initial_position = config['kalman_filter']['case1_initial_pos']
             plot_start_label = [1.90,5.00]
@@ -40,8 +40,8 @@ def run(case):
             plot_stop_label = [9.12,0.90]
         
         for run in range(1, 5):
-            beacons_data, gt_data = dP.load_data(case, run, config, beacons_column_names, gt_column_names) #load dataset
-            beacons_data, gt_data = dP.get_trajectory(beacons_data, gt_data, config) #interpolate points between GT
+            beacons_data, gt_data = dP.load_data(case, run, config, beacons_column_names, gt_column_names) # Load dataset
+            beacons_data, gt_data = dP.get_trajectory(beacons_data, gt_data, config) # Interpolate points between GT
             
             beacons_data_runs[f'run{run}'] = beacons_data
             gt_data_runs[f'run{run}'] = gt_data
@@ -81,35 +81,35 @@ def run(case):
             # Filter the data for each anchor ID and store in the dictionary
             filtered_data[f'{anchor_id}'] = beacons_data_runs[f'run{run}'][beacons_data_runs[f'run{run}']["AnchorID"] == int(anchor_id[1:])].copy()
         
-            #calculate real distance - not used, just calculating to maintain the size of dataframe as the first version of the codes
+            # Calculate real distance - not used, just calculating to maintain the size of the DataFrame as in the initial code version
             filtered_data[f'{anchor_id}'] = dP.calculate_real_distance_df(filtered_data[f'{anchor_id}'], anchor_id, coordinates, reference_coordinates, dH)   
 
             # Obtain the mean data for each position (discretized time)
             mean_data[f'{anchor_id}'] = dP.mean_mobility(filtered_data[f'{anchor_id}'], config)
 
-            #Calculate the RSSI utilizing the distance to initial points using the PLc obtained by the calibration code    
+            # Calculate the RSSI using the distance to initial points and the PLc obtained by the calibration code  
             mean_data[f'{anchor_id}']['Dest_RSSI'] = mean_data[f'{anchor_id}'].iloc[0,3] * np.power(10, ((mean_data[f'{anchor_id}'].iloc[0, 6] - mean_data[f'{anchor_id}']["MeanRSSI"]) / (10 * alpha)))
 
 
-        #Verify the lenght of dataframes and interpolate data if are missing measurements
+        # Verify the length of DataFrames and interpolate data if measurements are missing
         mean_data[f'a6501'], mean_data[f'a6502'], mean_data[f'a6503'], mean_data[f'a6504'] = dP.df_correct_sizes(mean_data[f'a6501'], mean_data[f'a6502'], mean_data[f'a6503'], mean_data[f'a6504'])
       
       
-        '''Here starts the algorithms to estimate the position'''
+        '''Here start the algorithms to estimate position'''
         
-        '''Get estimate position by Multilateration'''
+        '''Estimate position by Multilateration'''
         
-        #Calculate positioning with Multilateration Funcion
+        # Calculate positioning with Multilateration function
         df_posMLT = fP.multilateration(config, mean_data)
         
-        #Convert to float
+        # Convert to float
         df_posMLT['Xest'] = df_posMLT['Xest'].astype(float) 
         df_posMLT['Yest'] = df_posMLT['Yest'].astype(float)
         
-        #Calculate the error
+        # Calculate the error
         mean_error_posMLT, df_all_error_posMLT= dP.distance_error(df_posMLT)
         
-        # Append the DataFrame of errors to the list - used latter to get the CDF
+        # Append the DataFrame of errors to the list - used later to get the CDF
         all_errors_MLT.append(df_all_error_posMLT)
         
         # Append the average errors to the list
@@ -117,21 +117,21 @@ def run(case):
         
         #############################################################################################################3
         
-        '''Get estimate position by AoA+RSSI (Trigonometry)'''
+        '''Estimate position by AoA+RSSI (Trigonometry)'''
         df_posTrigonometry = fP.trigonometry(mean_data, config, df_posMLT)
         
         #Calculate the error
         mean_error_posTrigonometry, df_all_error_posTrigonometry= dP.distance_error(df_posTrigonometry)
         
-        # Append the DataFrame of errors to the list - used latter to get the CDF
+        # Append the DataFrame of errors to the list - used later to get the CDF
         all_errors_Trigonometry.append(df_all_error_posTrigonometry)
         
-        # Append the average errors to the list
+         # Append the average errors to the list
         mean_errors_Trigonometry.append(mean_error_posTrigonometry)
         
         ################################################################################################################
         
-        '''Get estimate position by AoA-only (Triangulation)'''
+        '''Estimate position by AoA-only (Triangulation)'''
         
         df_posTriangulation = fP.triangulation(mean_data, config)
         
@@ -142,7 +142,7 @@ def run(case):
         #Calculate the error
         mean_error_posTriangulation, df_all_error_posTriangulation= dP.distance_error(df_posTriangulation)
         
-        # Append the DataFrame of errors to the list - used latter to get the CDF
+        # Append the DataFrame of errors to the list - used later to get the CDF
         all_errors_Triangulation.append(df_all_error_posTriangulation)
         
         # Append the average errors to the list
@@ -166,7 +166,7 @@ def run(case):
         #Calculate the error
         mean_error_posMLT_KF, df_all_error_posMLT_KF = dP.distance_error(df_posMLT_KF)
         
-        # Append the DataFrame of errors to the list - used latter to get the CDF
+        # Append the DataFrame of errors to the list - used later to get the CDF
         all_errors_MLT_KF.append(df_all_error_posMLT_KF)
         
         # Append the average errors to the list
@@ -184,7 +184,7 @@ def run(case):
         #Calculate the error
         mean_error_posTrigonometry_KF, df_all_error_posTrigonometry_KF = dP.distance_error(df_posTrigonometry_KF)
         
-        # Append the DataFrame of errors to the list - used latter to get the CDF
+        # Append the DataFrame of errors to the list - used later to get the CDF
         all_errors_Trigonometry_KF.append(df_all_error_posTrigonometry_KF)
         
         # Append the average errors to the list
@@ -202,7 +202,7 @@ def run(case):
         #Calculate the error
         mean_error_posTriangulation_KF, df_all_error_posTriangulation_KF = dP.distance_error(df_posTriangulation_KF)
         
-        # Append the DataFrame of errors to the list - used latter to get the CDF
+        # Append the DataFrame of errors to the list - used later to get the CDF
         all_errors_Triangulation_KF.append(df_all_error_posTriangulation_KF)
         
         # Append the average errors to the list
@@ -221,7 +221,7 @@ def run(case):
         #Calculate the error
         mean_error_posARFL, df_all_error_posARFL = dP.distance_error(df_posARFL)
         
-        # Append the DataFrame of errors to the list - used latter to get the CDF
+        # Append the DataFrame of errors to the list - used later to get the CDF
         all_errors_ARFL.append(df_all_error_posARFL)
         
         # Append the average errors to the list
@@ -229,8 +229,8 @@ def run(case):
         
         
         #######################################################################################################
-        '''Plot real and estimate positions'''
-        # Estimate path plot - Only plot if True in config.yaml
+        '''Plot real and estimated positions'''
+        # Plot estimated path – Only plot if set to True in config.yaml
         if config['additional']['plot_first_path'] == False and config['additional']['plot_all_paths'] == False:
             plot_path = False
         else:
@@ -292,19 +292,22 @@ def run(case):
     ###############################################################################################################################
     
     # Calculate the overall mean average error
+    print(f'\nRESULTS WITHOUT KALMAN FILTER')
     overall_mean_error_MLT = round(sum(mean_errors_MLT) / (len(mean_errors_MLT)*100), 2) #transform to meters and round
-    print(f"\nMultilateration Average Error across all runs: {overall_mean_error_MLT}")
+    print(f"Multilateration Average Error across all runs: {overall_mean_error_MLT}")
     overall_mean_error_Trigonometry = round(sum(mean_errors_Trigonometry) / (len(mean_errors_Trigonometry)*100), 2) #transform to meters and round
     print(f"AoA+RSSI Average Error across all runs: {overall_mean_error_Trigonometry}")
     overall_mean_error_Triangulation = round(sum(mean_errors_Triangulation) / (len(mean_errors_Triangulation)*100), 2) #transform to meters and round
-    print(f"AoA-only Average Error across all runs: {overall_mean_error_Triangulation}\n")
+    print(f"AoA-only Average Error across all runs: {overall_mean_error_Triangulation}")
     overall_mean_error_MLT_KF = round(sum(mean_errors_MLT_KF) / (len(mean_errors_MLT_KF)*100), 2) #transform to meters and round
+    print(f'\nRESULTS WITH KALMAN FILTER')
     print(f"Multilateration+KF Average Error across all runs: {overall_mean_error_MLT_KF}")
     overall_mean_error_Trigonometry_KF = round(sum(mean_errors_Trigonometry_KF) / (len(mean_errors_Trigonometry_KF)*100), 2) #transform to meters and round
     print(f"AoA+RSSI+KF Average Error across all runs: {overall_mean_error_Trigonometry_KF}")
     overall_mean_error_Triangulation_KF = round(sum(mean_errors_Triangulation_KF) / (len(mean_errors_Triangulation_KF)*100), 2) #transform to meters and round
-    print(f"AoA-only+KF Average Error across all runs: {overall_mean_error_Triangulation_KF}\n")
+    print(f"AoA-only+KF Average Error across all runs: {overall_mean_error_Triangulation_KF}")
     overall_mean_error_ARFL = round(sum(mean_errors_ARFL) / (len(mean_errors_ARFL)*100), 2) #transform to meters and round
+    print(f'\nRESULTS WITH FUSION')
     print(f"ARFL Average Error across all runs: {overall_mean_error_ARFL}\n")
     
     
@@ -361,7 +364,6 @@ def run(case):
             plt.step(bin_edges[:-1], cdf, where='post', color=color, label=label, linewidth=2)  # Skip the last bin edge
 
             # Calculate and annotate percentiles
-            percentiles = [5, 25, 50, 75, 95]
             for p in percentile_values:
                 # Get the corresponding x value (distance error)
                 value = np.percentile(data, p) / 100  # Divide by 100 to match scaling in plot
